@@ -266,20 +266,19 @@ type ContType<'r,'a> = Cont of (('a -> 'r) -> 'r)
 let runCont (Cont k) f = k f
 
 module Cont =
-    let bind func (Cont c) = Cont (
-        fun k ->
-        c <| fun a -> runCont (func a) k 
-        )
+    let bind func (Cont c) = Cont ( fun k ->
+                                    c <| fun a -> runCont (func a) k 
+                                  )
     let result v = Cont ( fun k -> k v )
         
 
 type ContBuilder () =
     member this.Bind(expr,func) = Cont.bind func expr
     member this.Return(v) = Cont.result v
-    member this.Zero()    = Cont.result ()
+    member this.ReturnFrom(v) = v
 
 let callCC f = Cont <|
-               fun k -> runCont (f (fun a -> Cont (fun (_ : int -> int ) -> k a)) ) k
+               fun k -> runCont (f (fun a -> Cont (fun _ -> k a)) ) k
 
 let cont = ContBuilder()
 
@@ -306,12 +305,12 @@ printfn "%A" (runCont contBlock2 (fun n -> n))
 
 
 let contBlock3 n = 
-    callCC (fun (k : int -> ContType<int,int>) ->
+    callCC (fun k ->
         cont {
             let! a = zoo n 
             let! b = zoo (a + 10)
             if b % 10 = 0 then
-               k 0
+               return! (k 0)
             else
                return b
         }
