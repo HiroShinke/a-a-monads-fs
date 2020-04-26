@@ -325,12 +325,9 @@ let prodAllExplicit ls =
     let prodAllCPS0 ls k0 =
         let rec prodAllCPS ls k =
             match ls with
+                | (n :: rest) when n = 0 -> (k0 0)
                 | (n :: rest) ->
-                    if n = 0
-                    then
-                        (k0 0)
-                    else
-                        prodAllCPS rest (fun prod0 -> k (n * prod0))
+                    prodAllCPS rest (fun prod0 -> k (n * prod0))
                 | _ -> k 1
         prodAllCPS ls k0
 
