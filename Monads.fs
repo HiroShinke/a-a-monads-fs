@@ -321,3 +321,37 @@ printfn "%A" (runCont (contBlock3 10) (fun n -> n))
 
 printfn "%A" (runCont (contBlock3 11) (fun n -> n))
 
+let prodAllExplicit ls =
+    let prodAllCPS0 ls k0 =
+        let rec prodAllCPS ls k =
+            match ls with
+                | (n :: rest) ->
+                    if n = 0
+                    then
+                        (k0 0)
+                    else
+                        prodAllCPS rest (fun prod0 -> k (n * prod0))
+                | _ -> k 1
+        prodAllCPS ls k0
+
+    prodAllCPS0 ls id
+    
+    
+let prodAllCont ls =
+    let prodAllCPS0 ls = callCC ( fun k0 ->
+        let rec prodAllCPS ls = cont {
+            match ls with
+            | (n :: rest) when n = 0 ->  return! (k0 0)
+            | (n :: rest) ->
+              let! prod0 = prodAllCPS rest
+              return n * prod0
+            | _ -> return 1
+        }
+        prodAllCPS ls
+    )
+    runCont (prodAllCPS0 ls) id
+
+
+printfn "%A" <| prodAllCont [1;2;3;4;5]
+printfn "%A" <| prodAllCont [1;2;0;4;5]
+
